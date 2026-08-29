@@ -1,0 +1,33 @@
+{
+  "name": "mocksmith",
+  "version": "0.1.0",
+  "description": "Zero-dependency mock REST API server with live WebSocket updates and a built-in dashboard.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "mocksmith": "src/cli.js"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "STDLIB.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node src/cli.js db.json",
+    "test": "node --test",
+    "build": "node scripts/build.js"
+  },
+  "keywords": [
+    "mock",
+    "rest",
+    "api",
+    "json-server",
+    "zero-dependency",
+    "websocket"
+  ],
+  "dependencies": {}
+}

@@ -1,0 +1,34 @@
+{
+  "posts": [
+    {
+      "id": "1",
+      "title": "Zero dependencies, one command",
+      "author": "het",
+      "views": 128,
+      "published": true
+    },
+    {
+      "id": "2",
+      "title": "Framing WebSockets by hand",
+      "author": "het",
+      "views": 64,
+      "published": true
+    },
+    {
+      "id": "3",
+      "title": "Atomic writes without a database",
+      "author": "raptor",
+      "views": 12,
+      "published": false
+    }
+  ],
+  "comments": [
+    { "id": "1", "postId": "1", "body": "The install step is my favourite part." },
+    { "id": "2", "postId": "1", "body": "Does it do live updates?" },
+    { "id": "3", "postId": "2", "body": "Masking finally makes sense." }
+  ],
+  "profile": {
+    "name": "mocksmith",
+    "tagline": "a mock REST API with nothing underneath it"
+  }
+}
