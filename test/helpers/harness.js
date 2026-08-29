@@ -32,9 +32,21 @@ export function sampleDatabase() {
 }
 
 /**
+ * A logger that drops everything, including errors. Only for tests that provoke
+ * a server-side failure on purpose and would otherwise print a stack trace that
+ * looks like a real problem.
+ *
+ * @returns {import('../../src/logger.js').Logger}
+ */
+export function silentLogger() {
+  return { paint: (_styles, text) => text, info() {}, warn() {}, error() {} };
+}
+
+/**
  * @typedef {object} TestServer
  * @property {string} url - origin the server is listening on
  * @property {string} file - path of the temporary database file
+ * @property {string} dir - directory holding the database file
  * @property {import('../../src/store.js').Store} store
  * @property {import('node:http').Server} server
  */
@@ -44,15 +56,18 @@ export function sampleDatabase() {
  * `t.after`, so a failing assertion still releases the port and the temp dir.
  *
  * @param {import('node:test').TestContext} t
- * @param {{data?: Record<string, unknown>, options?: object}} [setup]
+ * @param {{data?: Record<string, unknown>, options?: object, storeOptions?: import('../../src/store.js').StoreOptions}} [setup]
  * @returns {Promise<TestServer>}
  */
-export async function startTestServer(t, { data = sampleDatabase(), options = {} } = {}) {
+export async function startTestServer(
+  t,
+  { data = sampleDatabase(), options = {}, storeOptions = {} } = {},
+) {
   const dir = await mkdtemp(join(tmpdir(), 'mocksmith-test-'));
   const file = join(dir, 'db.json');
   await writeFile(file, JSON.stringify(data, null, 2), 'utf8');
 
-  const store = await Store.load(file);
+  const store = await Store.load(file, { onError: () => {}, ...storeOptions });
   // quiet suppresses the banner but still lets unexpected errors reach stderr.
   const server = createServer(store, { logger: createLogger({ quiet: true, color: false }), ...options });
 
@@ -65,11 +80,13 @@ export async function startTestServer(t, { data = sampleDatabase(), options = {}
       // fetch keeps connections alive; without this close() never settles.
       server.closeAllConnections();
     });
-    await store.close();
+    // Tests that sabotage the disk on purpose leave a write that cannot
+    // succeed; failing teardown over it would hide the assertion that matters.
+    await store.close().catch(() => {});
     await rm(dir, { recursive: true, force: true });
   });
 
-  return { url: `http://127.0.0.1:${port}`, file, store, server };
+  return { url: `http://127.0.0.1:${port}`, file, dir, store, server };
 }
 
 /**
