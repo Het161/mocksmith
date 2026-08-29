@@ -155,7 +155,15 @@ export function formatBanner(options, store, origin, logger) {
  * @returns {Promise<{server: import('node:http').Server, store: import('./store.js').Store, origin: string}>}
  */
 export async function start(options, logger) {
-  const store = await Store.load(options.file);
+  const store = await Store.load(options.file, {
+    sync: options.sync,
+    watch: options.watch,
+    // Background write and watch failures have no request to be reported on,
+    // so they surface here instead of vanishing.
+    onError: (error) => logger.error(error),
+  });
+  store.onReload(() => logger.info(`  ${logger.paint('dim', 'Reloaded')} ${store.file}`));
+
   const server = createServer(store, { logger, ...options });
 
   await new Promise((resolvePromise, reject) => {
@@ -255,13 +263,10 @@ export async function main(argv = process.argv.slice(2)) {
   const { server, store, origin } = started;
   logger.info(formatBanner(options, store, origin, logger));
 
-  if (options.watch || options.staticDirs.length > 0) {
-    // Accepted now so the flags are stable; the features land in later
-    // milestones. Saying so is better than pretending they took effect.
-    const pending = [options.watch && '--watch', options.staticDirs.length > 0 && '--static']
-      .filter(Boolean)
-      .join(' and ');
-    logger.warn(`${pending} is not wired up yet in this build`);
+  if (options.staticDirs.length > 0) {
+    // Accepted now so the flag is stable; static serving lands in a later
+    // milestone. Saying so is better than pretending it took effect.
+    logger.warn('--static is not wired up yet in this build');
   }
 
   await new Promise((resolvePromise) => {
